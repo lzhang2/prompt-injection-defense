@@ -1,0 +1,52 @@
+# --- Secrets: never commit (matched in any folder) ---
+secrets.yaml
+secrets.*.yaml
+!secrets.example.yaml
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+service-account*.json
+*-credentials.json
+.netrc
+.pypirc
+
+# --- Models and training outputs: never commit (they live in the MLflow registry) ---
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.pkl
+*.joblib
+*.h5
+*.gguf
+checkpoint*/
+checkpoints/
+lightning_logs/
+wandb/
+
+# --- Local data: may contain users' emails, mined attacks, request logs ---
+artifacts/
+mlartifacts/
+mlruns/
+mlflow.db
+out/
+ray_results/
+
+# --- Python / tools ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+.ipynb_checkpoints/
+.DS_Store
+.vscode/
+.idea/

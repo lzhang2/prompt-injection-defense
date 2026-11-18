@@ -1,0 +1,41 @@
+# Repo root. Each folder (genai-safety/, ml-platform/) has its own .gitignore.
+
+# --- Secrets: never commit (matched in any folder) ---
+secrets.yaml
+secrets.*.yaml
+!secrets.example.yaml
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+service-account*.json
+
+# --- Local runs and models at the root ---
+/mlflow.db
+/mlartifacts/
+/mlruns/
+/out/
+*.safetensors
+*.bin
+*.pt
+*.ckpt
+
+# --- Stray files from unquoted shell commands (e.g. pip install pkg>=2.6) ---
+/=
+/2.6
+
+# --- Early experiments, replaced by genai-safety/notebooks/project_tour.ipynb.
+#     rater.ipynb contains a hardcoded API key: never commit it.
+/prompt_injection_attacks.ipynb
+/rater.ipynb
+/train_model.ipynb
+/stages.py
+
+# --- Tools ---
+.DS_Store
+__pycache__/
+.ipynb_checkpoints/
+.vscode/
+.idea/

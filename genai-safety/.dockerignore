@@ -1,0 +1,38 @@
+# Keep secrets, data, models and local state out of the image. Secrets are
+# mounted at runtime; models are loaded from the MLflow registry.
+
+# Secrets
+secrets.yaml
+**/secrets.yaml
+**/secrets.*.yaml
+!**/secrets.example.yaml
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/credentials*.json
+
+# Data, models, training outputs
+mlflow.db
+mlartifacts/
+mlruns/
+artifacts/
+out/
+**/ray_results/
+**/*.safetensors
+**/*.bin
+**/*.pt
+**/*.pth
+**/*.ckpt
+**/*.onnx
+**/*.pkl
+
+# Local tooling
+genai_safety.egg-info/
+**/__pycache__/
+*.pyc
+.git/
+.DS_Store
+*.ipynb
+.venv/
+.pytest_cache/

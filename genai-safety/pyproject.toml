@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "genai-safety"
+version = "0.1.0"
+description = "Mock production pipeline: injection classifier, LLM auto-rater, email assistant red-team eval"
+requires-python = ">=3.10"
+dependencies = [
+    "torch", "transformers", "datasets", "accelerate", "sentencepiece",
+    "ray[train,serve]", "fastapi", "mlflow", "anthropic", "google-genai", "scikit-learn", "numpy", "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src", "."]
+include = ["safety*", "pipelines*"]

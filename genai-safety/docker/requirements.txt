@@ -1,0 +1,7 @@
+# genai-safety's own libraries, on top of ml-platform/ray-base (which already has
+# ray, mlflow, torch, transformers). Pinned to the versions used locally.
+fastapi==0.163.0
+google-genai==3.3.0
+anthropic==2.8.0
+datasets==5.2.0
+scikit-learn==1.9.1

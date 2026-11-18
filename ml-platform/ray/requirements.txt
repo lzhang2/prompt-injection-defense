@@ -1,0 +1,14 @@
+# Shared runtime for every app on the Ray cluster: Ray, MLflow client, and the
+# model stack. Apps add their own libraries in their own image (FROM ray-base).
+# torch is installed separately from the CPU-only index (see Dockerfile).
+ray[serve,train]==2.60.0
+mlflow==3.18.0
+transformers==5.22.2
+tokenizers==0.23.3
+safetensors==0.8.0
+sentencepiece==0.2.3
+accelerate==1.15.0
+numpy==2.5.4
+pandas==3.1.1
+pyarrow==26.0.1
+PyYAML==6.0.3

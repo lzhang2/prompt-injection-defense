@@ -1,0 +1,12 @@
+# Ray Serve config used inside the container. http_options.host must be 0.0.0.0:
+# 127.0.0.1 inside a container is unreachable from the host or other containers.
+proxy_location: HeadOnly
+http_options:
+  host: 0.0.0.0
+  port: 8000
+applications:
+  - name: default
+    route_prefix: /
+    import_path: safety.serving.app:build_app
+    args:
+      config: /app/configs/config.yaml

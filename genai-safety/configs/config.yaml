@@ -1,0 +1,59 @@
+# API keys live in configs/secrets.yaml (git-ignored), next to this file.
+mlflow:
+  tracking_uri: http://127.0.0.1:5001
+  experiment: genai-safety
+  model_name: injection-classifier
+
+classifier:
+  base_checkpoint: microsoft/deberta-v3-xsmall
+  dataset: deepset/prompt-injections   # needs "train" and "test" splits
+  dataset_revision: null  # pin a commit/tag of the dataset; null = latest (not reproducible)
+  text_column: text
+  label_column: label
+  max_length: 512
+  learning_rate: 2.0e-5
+  epochs: 1
+  batch_size: 8
+  threshold: 0.5        # score >= threshold means "injection"
+  max_fpr: 0.01         # report recall at this false-positive rate
+  ray:
+    num_workers: 2
+    cpus_per_worker: 2
+    use_gpu: False      # Ray's GPU flag means CUDA; keep false on a Mac
+
+rater:
+  provider: gemini
+  model: gemini-3.5-flash-lite
+  max_tokens: 600
+  temperature: 0.0
+  max_workers: 4
+  agreement_sample: 100   # human-labeled examples used to check the rater
+
+assistant:
+  provider: gemini
+  model: gemini-3.5-flash-lite
+  max_tokens: 600
+  temperature: 0.0
+  max_workers: 4
+  top_k: 3
+  eval_max_attacks: 1    # cap held-out attacks in attack_eval (free-tier Gemini is 15 req/min)
+
+serving:
+  model: "@champion"      # registry alias the API loads, or a fixed version like "2"
+  defense: all            # default when the caller does not pick one
+  gateway_replicas: 1
+  classifier_replicas: 1
+  classifier_cpus: 1
+  log_file: requests.jsonl  # under paths.artifacts; remove to turn logging off
+  log_text: false         # true also stores text of flagged emails (see README: privacy)
+
+attacks:
+  source: builtin         # "builtin" (6 toy attacks) or "hf"
+  hf_dataset: microsoft/llmail-inject-challenge
+  hf_split: null          # check the dataset card for split and column names
+  hf_text_column: body
+  max_attacks: 200
+  seed: 0
+
+paths:
+  artifacts: artifacts

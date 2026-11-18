@@ -1,0 +1,44 @@
+# genai-safety: builds the app image and runs one-off jobs against the shared
+# platform in ../ml-platform (MLflow + Ray cluster). Nothing long-lived runs here.
+#
+#   docker compose build                       # app image: genai-safety:latest
+#   docker compose run --rm deploy             # serve deploy onto ray-head
+#   docker compose run --rm pipeline --stages compare
+#
+# The jobs join the platform's "ml-platform" network and reach its services by
+# name (http://mlflow:5000, http://ray-head:8265). Start the platform first.
+name: genai-safety
+
+networks:
+  default:
+    name: ml-platform
+    external: true           # created by ../ml-platform/docker-compose.yml
+
+x-job: &job
+  image: genai-safety:latest
+  environment:
+    MLFLOW_TRACKING_URI: http://mlflow:5000
+  volumes:
+    - ./configs/secrets.yaml:/app/configs/secrets.yaml:ro   # API keys for jobs
+    - ./configs/config.yaml:/app/configs/config.yaml:ro
+    - ./docker/serve_config.yaml:/app/docker/serve_config.yaml:ro
+    - ./artifacts:/app/artifacts
+
+services:
+  deploy:
+    <<: *job
+    build: {context: ., dockerfile: docker/Dockerfile}
+    command: ["sh", "docker/deploy_app.sh"]
+    restart: "no"
+
+  train:                     # pipeline stages as a Ray Job on the cluster
+    <<: *job
+    profiles: ["jobs"]
+    entrypoint: ["sh", "docker/submit_pipeline.sh"]
+    restart: "no"
+
+  pipeline:                  # same stages, but with a Ray inside this container
+    <<: *job
+    profiles: ["jobs"]
+    shm_size: 2gb
+    entrypoint: ["python", "-m", "pipelines.run_pipeline"]

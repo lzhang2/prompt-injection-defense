@@ -1,0 +1,63 @@
+# Shared ML platform: MLflow + a Ray cluster. Apps live in their own repos and
+# join the "ml-platform" network to reach these services by name:
+#   http://mlflow:5000     model registry / tracking
+#   http://ray-head:8265   Ray dashboard + job/serve API (where apps deploy)
+#   http://ray-head:8000   Ray Serve HTTP (the apps' endpoints)
+#
+#   docker build -t ml-platform/ray-base:2.60.0 ray/   # once
+#   docker compose up -d mlflow                        # step 1
+#   docker compose up -d ray-head                      # step 2 (needs RAY_IMAGE, see .env)
+#                                                      #   and the app's configs/secrets.yaml
+#
+# Ports are bound to 127.0.0.1 only. They avoid what already runs on this Mac:
+# 5000 (AirPlay Receiver), 5001 (local mlflow), 8000/8265 (local Ray).
+name: ml-platform
+
+networks:
+  default:
+    name: ml-platform        # fixed name so other compose projects can join it
+
+services:
+  mlflow:
+    build: mlflow
+    image: ml-platform/mlflow:3.18.0
+    volumes:
+      - ./data/mlflow:/mlflow/data
+    ports:
+      - "127.0.0.1:${MLFLOW_HOST_PORT:-5100}:5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  ray-head:
+    # The image must contain the code of every app deployed on this cluster.
+    # With one app, point it at that app's image (built FROM ray-base).
+    image: ${RAY_IMAGE:-ml-platform/ray-base:2.60.0}
+    # CPUs Ray schedules with (training workers + Serve replicas share them).
+    # --num-cpus is what Ray counts; `cpus` makes Docker enforce the same limit.
+    command: ["ray", "start", "--head", "--block", "--dashboard-host", "0.0.0.0",
+              "--disable-usage-stats", "--num-cpus", "${RAY_NUM_CPUS:-4}"]
+    cpus: ${RAY_NUM_CPUS:-4}
+    depends_on:
+      mlflow: {condition: service_healthy}
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    volumes:
+      - ./data/ray-artifacts:/app/artifacts      # what apps write (e.g. request logs)
+      # API keys: the app's secrets.yaml, read-only. The app loads it from next to
+      # its config.yaml at startup. Never baked into an image.
+      - ${APP_SECRETS:-../genai-safety/configs/secrets.yaml}:/app/configs/secrets.yaml:ro
+    ports:
+      - "127.0.0.1:${SERVE_HOST_PORT:-8100}:8000"
+      - "127.0.0.1:${RAY_DASHBOARD_HOST_PORT:-8365}:8265"
+    shm_size: 2gb        # Ray's object store uses /dev/shm; Docker's default is 64 MB
+    healthcheck:         # the cluster is up; whether an app is up is the app's concern
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8265/api/gcs_healthz')"]
+      interval: 5s
+      timeout: 3s
+      start_period: 30s
+      retries: 20
+    restart: unless-stopped
